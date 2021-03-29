@@ -9,12 +9,13 @@ let streamer = new Streamer()
 async function record(){
     let socket = await streamer.open()
     await mic.start(socket)
+    console.log('record started')
 }
 
 function main(){
     let but = document.getElementById("mic_button")
     but.onclick = ()=>{
-        record.then(console.log('record started'))
+        record()
     }
 
     let open_but = document.getElementById("test_button")
