@@ -9,7 +9,7 @@ class Streamer{
         this.socket = null
     }
     is_open(){
-        return (this.socket == null)
+        return (this.socket != null)
     }
     receive(event){
         console.log(`ws-message>${event.data}`)
@@ -49,6 +49,10 @@ class Streamer{
             }
         }
         this.socket.send(payload)
+    }
+    close(){
+        this.socket.close()
+        this.socket = null
     }
 }
 
