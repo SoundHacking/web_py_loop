@@ -10,7 +10,8 @@ let player = new Player()
 
 async function record(){
     let socket = await streamer.open()
-    socket.onmessage = player.receive
+    //socket.onmessage = player.receive
+    socket.onmessage = recorder.receiver
     await recorder.start(socket)
     console.log('record started')
 }

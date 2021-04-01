@@ -2,6 +2,7 @@
 let buffersize = 4096
 
 let socket = null
+let queue = []
 class Microphone{
     constructor(){
         this.started = false
@@ -10,18 +11,39 @@ class Microphone{
         let inputBuffer = audioProcessingEvent.inputBuffer;
         let outputBuffer = audioProcessingEvent.outputBuffer;
         for (let channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+                //--------------------------------------------------
+                //TX
                 let inputData = inputBuffer.getChannelData(channel);
                 console.log(`tx: length:${inputData.length} type:${typeof(inputData)} [0]:${inputData[0]}`)
                 socket.send(inputData)
+                //---------------------------------------------------
+                //RX
+                //console.log(`queue length = ${queue.length}`)
                 let outputData = outputBuffer.getChannelData(channel);
-                for (let sample = 0; sample < inputBuffer.length; sample++) {
-                    outputData[sample] = inputData[sample];
-                    outputData[sample] += ((Math.random() * 2) - 1) * 0.03;
+                if(queue.length > 0){
+                    let injectData = queue.shift()
+                    //outputData = injectData
+                    for (let sample = 0; sample < inputBuffer.length; sample++) {
+                        outputData[sample] = injectData[sample];
+                        //outputData[sample] += ((Math.random() * 2) - 1) * 0.03;
+                    }
+                    console.log(`output[0]:${outputData[0]}`)
+                }else{
+                    //Null sink buffering on startup
+                    for (let sample = 0; sample < inputBuffer.length; sample++) {
+                        outputData[sample] = 0;
+                        //outputData[sample] += ((Math.random() * 2) - 1) * 0.03;
+                    }
                 }
             }
     }
-    receiver(data){
-        console.log(data.size)
+    receiver(event){
+        if (event.data instanceof ArrayBuffer) {
+            let streamData = new Float32Array(event.data);
+            queue.push(streamData)
+            console.log(`rx: length:${streamData.length} type:${typeof(streamData)}  [0]:${streamData[0]}`)
+            return
+        }
     }
     async start(arg_socket){
         socket = arg_socket
