@@ -14,7 +14,7 @@ class Microphone{
                 //--------------------------------------------------
                 //TX
                 let inputData = inputBuffer.getChannelData(channel);
-                console.log(`tx: length:${inputData.length} type:${typeof(inputData)} [0]:${inputData[0]}`)
+                console.log(`tx: length:${inputData.length} type:${typeof(inputData)} [0]:${inputData[0]} nbch:${outputBuffer.numberOfChannels}`)
                 socket.send(inputData)
                 //---------------------------------------------------
                 //RX
@@ -22,19 +22,12 @@ class Microphone{
                 let outputData = outputBuffer.getChannelData(channel);
                 if(queue.length > 0){
                     let injectData = queue.shift()
-                    //outputData = injectData
-                    for (let sample = 0; sample < inputBuffer.length; sample++) {
-                        outputData[sample] = injectData[sample];
-                        //outputData[sample] += ((Math.random() * 2) - 1) * 0.03;
-                    }
-                    console.log(`output[0]:${outputData[0]}`)
+                    outputData.set(injectData)
                 }else{
                     //Null sink buffering on startup
-                    for (let sample = 0; sample < inputBuffer.length; sample++) {
-                        outputData[sample] = 0;
-                        //outputData[sample] += ((Math.random() * 2) - 1) * 0.03;
-                    }
+                    outputData.fill(0)
                 }
+                console.log(`output[0]:${outputData[0]}`)
             }
     }
     receiver(event){
