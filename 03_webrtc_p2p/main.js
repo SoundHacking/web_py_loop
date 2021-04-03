@@ -5,7 +5,6 @@
  *  that can be found in the LICENSE file in the root of the source
  *  tree.
  */
-/* global TimelineDataSeries, TimelineGraphView */
 
 'use strict';
 
@@ -21,13 +20,6 @@ let pc1;
 let pc2;
 let localStream;
 
-let bitrateGraph;
-let bitrateSeries;
-let headerrateSeries;
-
-let packetGraph;
-let packetSeries;
-
 let lastResult;
 
 const offerOptions = {
@@ -36,9 +28,6 @@ const offerOptions = {
   voiceActivityDetection: false
 };
 
-const audioLevels = [];
-let audioLevelGraph;
-let audioLevelSeries;
 
 // Enabling opus DTX is an expert option without GUI.
 // eslint-disable-next-line prefer-const
@@ -116,21 +105,6 @@ function gotStream(stream) {
 
   pc1.createOffer(offerOptions)
       .then(gotDescription1, onCreateSessionDescriptionError);
-
-  bitrateSeries = new TimelineDataSeries();
-  bitrateGraph = new TimelineGraphView('bitrateGraph', 'bitrateCanvas');
-  bitrateGraph.updateEndDate();
-
-  headerrateSeries = new TimelineDataSeries();
-  headerrateSeries.setColor('green');
-
-  packetSeries = new TimelineDataSeries();
-  packetGraph = new TimelineGraphView('packetGraph', 'packetCanvas');
-  packetGraph.updateEndDate();
-
-  audioLevelSeries = new TimelineDataSeries();
-  audioLevelGraph = new TimelineGraphView('audioLevelGraph', 'audioLevelCanvas');
-  audioLevelGraph.updateEndDate();
 }
 
 function onCreateSessionDescriptionError(error) {
@@ -342,26 +316,6 @@ window.setInterval(() => {
         headerBytes = report.headerBytesSent;
 
         packets = report.packetsSent;
-        if (lastResult && lastResult.has(report.id)) {
-          const deltaT = now - lastResult.get(report.id).timestamp;
-          // calculate bitrate
-          const bitrate = 8 * (bytes - lastResult.get(report.id).bytesSent) /
-            deltaT;
-          const headerrate = 8 * (headerBytes - lastResult.get(report.id).headerBytesSent) /
-            deltaT;
-
-          // append to chart
-          bitrateSeries.addPoint(now, bitrate);
-          headerrateSeries.addPoint(now, headerrate);
-          bitrateGraph.setDataSeries([bitrateSeries, headerrateSeries]);
-          bitrateGraph.updateEndDate();
-
-          // calculate number of packets and append to chart
-          packetSeries.addPoint(now, 1000 * (packets -
-            lastResult.get(report.id).packetsSent) / deltaT);
-          packetGraph.setDataSeries([packetSeries]);
-          packetGraph.updateEndDate();
-        }
       }
     });
     lastResult = res;
@@ -369,7 +323,6 @@ window.setInterval(() => {
 }, 1000);
 
 if (window.RTCRtpReceiver && ('getSynchronizationSources' in window.RTCRtpReceiver.prototype)) {
-  let lastTime;
   const getAudioLevel = (timestamp) => {
     window.requestAnimationFrame(getAudioLevel);
     if (!pc2) {
@@ -378,21 +331,6 @@ if (window.RTCRtpReceiver && ('getSynchronizationSources' in window.RTCRtpReceiv
     const receiver = pc2.getReceivers().find(r => r.track.kind === 'audio');
     if (!receiver) {
       return;
-    }
-    const sources = receiver.getSynchronizationSources();
-    sources.forEach(source => {
-      audioLevels.push(source.audioLevel);
-    });
-    if (!lastTime) {
-      lastTime = timestamp;
-    } else if (timestamp - lastTime > 500 && audioLevels.length > 0) {
-      // Update graph every 500ms.
-      const maxAudioLevel = Math.max.apply(null, audioLevels);
-      audioLevelSeries.addPoint(Date.now(), maxAudioLevel);
-      audioLevelGraph.setDataSeries([audioLevelSeries]);
-      audioLevelGraph.updateEndDate();
-      audioLevels.length = 0;
-      lastTime = timestamp;
     }
   };
   window.requestAnimationFrame(getAudioLevel);
