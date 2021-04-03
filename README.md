@@ -5,6 +5,10 @@ An audio loop to send audio from the Web user media to python and get it back
 
 https://www.homesmartmesh.com/docs/sound/#web-py-loop
 
+# webrtc reference
+* 03_webrtc_p2p : edited
+https://github.com/webrtc/samples/tree/gh-pages/src/content/peerconnection/audio
+
 # Device capabilities
 ```json
 {
