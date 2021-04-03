@@ -11,7 +11,6 @@
 const audio2 = document.querySelector('audio#audio2');
 const callButton = document.querySelector('button#callButton');
 const hangupButton = document.querySelector('button#hangupButton');
-const codecSelector = document.querySelector('select#codec');
 hangupButton.disabled = true;
 callButton.onclick = call;
 hangupButton.onclick = hangup;
@@ -58,7 +57,6 @@ function onCreateSessionDescriptionError(error) {
 
 function call() {
   callButton.disabled = true;
-  codecSelector.disabled = true;
   console.log('Starting call');
   const servers = null;
   pc1 = new RTCPeerConnection(servers);
@@ -84,7 +82,6 @@ function gotDescription1(desc) {
   console.log(`Offer from pc1\n : {desc.sdp}`);
   pc1.setLocalDescription(desc)
       .then(() => {
-        desc.sdp = forceChosenAudioCodec(desc.sdp);
         pc2.setRemoteDescription(desc).then(() => {
           return pc2.createAnswer().then(gotDescription2, onCreateSessionDescriptionError);
         }, onSetSessionDescriptionError);
@@ -94,7 +91,6 @@ function gotDescription1(desc) {
 function gotDescription2(desc) {
   console.log(`Answer from pc2\n : {desc.sdp}`);
   pc2.setLocalDescription(desc).then(() => {
-    desc.sdp = forceChosenAudioCodec(desc.sdp);
     if (useDtx) {
       desc.sdp = desc.sdp.replace('useinbandfec=1', 'useinbandfec=1;usedtx=1');
     }
@@ -114,7 +110,6 @@ function hangup() {
   pc2 = null;
   hangupButton.disabled = true;
   callButton.disabled = false;
-  codecSelector.disabled = false;
 }
 
 function gotRemoteStream(e) {
@@ -151,66 +146,6 @@ function onAddIceCandidateError(error) {
 
 function onSetSessionDescriptionError(error) {
   console.log(`Failed to set session description: ${error.toString()}`);
-}
-
-function forceChosenAudioCodec(sdp) {
-  return maybePreferCodec(sdp, 'audio', 'send', codecSelector.value);
-}
-
-// Copied from AppRTC's sdputils.js:
-
-// Sets |codec| as the default |type| codec if it's present.
-// The format of |codec| is 'NAME/RATE', e.g. 'opus/48000'.
-function maybePreferCodec(sdp, type, dir, codec) {
-  const str = `${type} ${dir} codec`;
-  if (codec === '') {
-    console.log(`No preference on ${str}.`);
-    return sdp;
-  }
-
-  console.log(`Prefer ${str}: ${codec}`);
-
-  const sdpLines = sdp.split('\r\n');
-
-  // Search for m line.
-  const mLineIndex = findLine(sdpLines, 'm=', type);
-  if (mLineIndex === null) {
-    return sdp;
-  }
-
-  // If the codec is available, set it as the default in m line.
-  const codecIndex = findLine(sdpLines, 'a=rtpmap', codec);
-  console.log('codecIndex', codecIndex);
-  if (codecIndex) {
-    const payload = getCodecPayloadType(sdpLines[codecIndex]);
-    if (payload) {
-      sdpLines[mLineIndex] = setDefaultCodec(sdpLines[mLineIndex], payload);
-    }
-  }
-
-  sdp = sdpLines.join('\r\n');
-  return sdp;
-}
-
-// Find the line in sdpLines that starts with |prefix|, and, if specified,
-// contains |substr| (case-insensitive search).
-function findLine(sdpLines, prefix, substr) {
-  return findLineInRange(sdpLines, 0, -1, prefix, substr);
-}
-
-// Find the line in sdpLines[startLine...endLine - 1] that starts with |prefix|
-// and, if specified, contains |substr| (case-insensitive search).
-function findLineInRange(sdpLines, startLine, endLine, prefix, substr) {
-  const realEndLine = endLine !== -1 ? endLine : sdpLines.length;
-  for (let i = startLine; i < realEndLine; ++i) {
-    if (sdpLines[i].indexOf(prefix) === 0) {
-      if (!substr ||
-        sdpLines[i].toLowerCase().indexOf(substr.toLowerCase()) !== -1) {
-        return i;
-      }
-    }
-  }
-  return null;
 }
 
 // Gets the codec payload type from an a=rtpmap:X line.
