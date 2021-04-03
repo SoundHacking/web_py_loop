@@ -1,5 +1,7 @@
 
-let buffersize = 4096
+//48 KHz : 4096 => 85.33 ms :  12 pps
+//48 KHz :  256 =>  5.33 ms : 187 pps
+let buffersize = 256
 
 let socket = null
 let queue = []
@@ -14,7 +16,7 @@ class Microphone{
                 //--------------------------------------------------
                 //TX
                 let inputData = inputBuffer.getChannelData(channel);
-                console.log(`tx: length:${inputData.length} type:${typeof(inputData)} [0]:${inputData[0]} nbch:${outputBuffer.numberOfChannels}`)
+                //console.log(`tx: length:${inputData.length} type:${typeof(inputData)} [0]:${inputData[0]} nbch:${outputBuffer.numberOfChannels}`)
                 socket.send(inputData)
                 //---------------------------------------------------
                 //RX
@@ -27,14 +29,13 @@ class Microphone{
                     //Null sink buffering on startup
                     outputData.fill(0)
                 }
-                console.log(`output[0]:${outputData[0]}`)
             }
     }
     receiver(event){
         if (event.data instanceof ArrayBuffer) {
             let streamData = new Float32Array(event.data);
             queue.push(streamData)
-            console.log(`rx: length:${streamData.length} type:${typeof(streamData)}  [0]:${streamData[0]}`)
+            console.log(`rx: length:${streamData.length}`)
             return
         }
     }
@@ -49,6 +50,8 @@ class Microphone{
         console.log('microphone starting')
         let audioContext = new(window.AudioContext || window.webkitAudioContext)()
         let stream = await navigator.mediaDevices.getUserMedia({audio:true})
+        const capabilities = stream.getAudioTracks()[0].getCapabilities();
+        console.log(capabilities)
         this.audioInput = audioContext.createMediaStreamSource(stream)
         this.scriptNode = audioContext.createScriptProcessor(buffersize, 1, 1) //deprecated => replaced by AudioWorkletNode
         this.scriptNode.onaudioprocess = this.sender

@@ -1,16 +1,11 @@
 import {Microphone} from "./microphone.js"
-import {Player} from "./player.js"
 import {Streamer} from "./streamer.js"
 
 let recorder = new Microphone()
 let streamer = new Streamer()
-let player = new Player()
-
-//Player : https://mdn.github.io/webaudio-examples/audio-buffer/
 
 async function record(){
     let socket = await streamer.open()
-    //socket.onmessage = player.receive
     socket.onmessage = recorder.receiver
     await recorder.start(socket)
     console.log('record started')
