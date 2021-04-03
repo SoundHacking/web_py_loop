@@ -38,7 +38,7 @@ let useFec = true;
 
 function gotStream(stream) {
   hangupButton.disabled = false;
-  console.log('Received local stream');
+  console.log('gotStream() >>>> Received local stream');
   localStream = stream;
   const audioTracks = localStream.getAudioTracks();
   if (audioTracks.length > 0) {
@@ -52,12 +52,13 @@ function gotStream(stream) {
 }
 
 function onCreateSessionDescriptionError(error) {
-  console.log(`Failed to create session description: ${error.toString()}`);
+  console.log(`onCreateSessionDescriptionError() >>>> Failed to create session description: ${error.toString()}`);
 }
 
 function call() {
   callButton.disabled = true;
-  console.log('Starting call');
+  console.log('--------------------------------------------------------------------------------');
+  console.log('call() >>>> Starting call');
   const servers = null;
   pc1 = new RTCPeerConnection(servers);
   console.log('Created local peer connection object pc1');
@@ -79,7 +80,7 @@ function call() {
 }
 
 function gotDescription1(desc) {
-  console.log(`Offer from pc1\n : {desc.sdp}`);
+  console.log(`gotDescription1() >>>> Offer from pc1\n : {desc.sdp}`);
   pc1.setLocalDescription(desc)
       .then(() => {
         pc2.setRemoteDescription(desc).then(() => {
@@ -89,7 +90,7 @@ function gotDescription1(desc) {
 }
 
 function gotDescription2(desc) {
-  console.log(`Answer from pc2\n : {desc.sdp}`);
+  console.log(`gotDescription2() >>>> Answer from pc2\n : {desc.sdp}`);
   pc2.setLocalDescription(desc).then(() => {
     if (useDtx) {
       desc.sdp = desc.sdp.replace('useinbandfec=1', 'useinbandfec=1;usedtx=1');
@@ -102,7 +103,8 @@ function gotDescription2(desc) {
 }
 
 function hangup() {
-  console.log('Ending call');
+  console.log('--------------------------------------------------------------------------------');
+  console.log('hangup() >>>> Ending call');
   localStream.getTracks().forEach(track => track.stop());
   pc1.close();
   pc2.close();
@@ -113,6 +115,7 @@ function hangup() {
 }
 
 function gotRemoteStream(e) {
+  console.log("gotRemoteStream() >>>> ")
   if (audio2.srcObject !== e.streams[0]) {
     audio2.srcObject = e.streams[0];
     console.log('Received remote stream');
@@ -128,6 +131,7 @@ function getName(pc) {
 }
 
 function onIceCandidate(pc, event) {
+  console.log("onIceCandidate() >>>> ")
   getOtherPc(pc).addIceCandidate(event.candidate)
       .then(
           () => onAddIceCandidateSuccess(pc),
@@ -137,38 +141,13 @@ function onIceCandidate(pc, event) {
 }
 
 function onAddIceCandidateSuccess() {
-  console.log('AddIceCandidate success.');
+  console.log('onAddIceCandidateSuccess() >>>> AddIceCandidate success.');
 }
 
 function onAddIceCandidateError(error) {
-  console.log(`Failed to add ICE Candidate: ${error.toString()}`);
+  console.log(`onAddIceCandidateError() >>>> Failed to add ICE Candidate: ${error.toString()}`);
 }
 
 function onSetSessionDescriptionError(error) {
-  console.log(`Failed to set session description: ${error.toString()}`);
+  console.log(`onSetSessionDescriptionError() >>>> Failed to set session description: ${error.toString()}`);
 }
-
-// Gets the codec payload type from an a=rtpmap:X line.
-function getCodecPayloadType(sdpLine) {
-  const pattern = new RegExp('a=rtpmap:(\\d+) \\w+\\/\\d+');
-  const result = sdpLine.match(pattern);
-  return (result && result.length === 2) ? result[1] : null;
-}
-
-// Returns a new m= line with the specified codec as the first one.
-function setDefaultCodec(mLine, payload) {
-  const elements = mLine.split(' ');
-
-  // Just copy the first three parameters; codec order starts on fourth.
-  const newLine = elements.slice(0, 3);
-
-  // Put target payload first and copy in the rest.
-  newLine.push(payload);
-  for (let i = 3; i < elements.length; i++) {
-    if (elements[i] !== payload) {
-      newLine.push(elements[i]);
-    }
-  }
-  return newLine.join(' ');
-}
-
