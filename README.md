@@ -9,6 +9,9 @@ https://www.homesmartmesh.com/docs/sound/#web-py-loop
 * 03_webrtc_p2p : edited
 https://github.com/webrtc/samples/tree/gh-pages/src/content/peerconnection/audio
 
+# web dictaphone
+https://github.com/mdn/web-dictaphone/
+
 # Device capabilities
 ```json
 {

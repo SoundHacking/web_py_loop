@@ -9,6 +9,7 @@ async function record(){
     socket.onmessage = recorder.receiver
     await recorder.start(socket)
     console.log('record started')
+    recorder.recorder.start()
 }
 
 function main(){
