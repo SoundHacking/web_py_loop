@@ -1,8 +1,3 @@
-
-//48 KHz : 4096 => 85.33 ms :  12 pps
-//48 KHz :  256 =>  5.33 ms : 187 pps
-let buffersize = 256
-
 let queue = []
 let started = false
 

@@ -15,19 +15,14 @@ class Microphone{
         if(!started){
             return
         }
-        console.log(event.data.type)
-        console.log(`tx:${typeof(event.data)}`)
+        console.log(`tx:${event.data.size}`)
         if (event.data && event.data.size > 0) {
             socket.send(event.data)
         }
     }
-    direct_push(event){
-        queue.push(event.data);
-        console.log(event.data.type);
- }
     receiver(event){
         queue.push(event.data)
-        console.log(event.data.type)
+        console.log(`rx:${event.data.size}`)
     }
     async start(arg_socket){
         socket = arg_socket
@@ -42,6 +37,7 @@ class Microphone{
         recorder.ondataavailable = this.sender
         recorder.onstop = this.mediarecorder_stop
         
+        recorder.start(200)
         console.log(recorder.state)
         this.recorder = recorder
 
