@@ -1,7 +1,7 @@
 
-//48 KHz : 4096 => 85.33 ms :  12 pps
-//48 KHz :  256 =>  5.33 ms : 187 pps
-let buffersize = 256
+//min period is 50 ~ 60 ms, if set below, the browser won't execute any faster
+//for 100 ms the period is very approximate
+const period_ms = 100
 
 let socket = null
 let queue = []
@@ -15,7 +15,7 @@ class Microphone{
         if(!started){
             return
         }
-        console.log(`tx:${event.data.size}`)
+        //console.log(`tx:${event.data.size}`)
         if (event.data && event.data.size > 0) {
             socket.send(event.data)
         }
@@ -37,7 +37,7 @@ class Microphone{
         recorder.ondataavailable = this.sender
         recorder.onstop = this.mediarecorder_stop
         
-        recorder.start(200)
+        recorder.start(period_ms)
         console.log(recorder.state)
         this.recorder = recorder
 
@@ -48,7 +48,9 @@ class Microphone{
         audio.controls = true;
         document.body.appendChild(audio)
 
+        console.log(`queue length = ${queue.length}`)
         const blob = new Blob(queue, { 'type' : 'audio/webm; codecs=opus' });
+        console.log(`blob size = ${blob.size}`)
         queue = [];
         const audioURL = window.URL.createObjectURL(blob);
         audio.src = audioURL;
