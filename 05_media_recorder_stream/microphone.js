@@ -15,39 +15,33 @@ class Microphone{
         if(!started){
             return
         }
-        //event.data.type = 'audio/webm;codecs=opus'
         console.log(event.data.type)
         console.log(`tx:${typeof(event.data)}`)
         if (event.data && event.data.size > 0) {
             socket.send(event.data)
         }
-        queue.push(event.data)
     }
+    direct_push(event){
+        queue.push(event.data);
+        console.log(event.data.type);
+ }
     receiver(event){
-        //queue.push(event.data)
+        queue.push(event.data)
         console.log(event.data.type)
     }
     async start(arg_socket){
         socket = arg_socket
-        //socket.binaryType = 'arraybuffer';
         if(started){
             console.log('microphone alread started')
             return
         }
         started = true
         console.log('microphone starting')
-        let audioContext = new(window.AudioContext || window.webkitAudioContext)()
         let stream = await navigator.mediaDevices.getUserMedia({audio:true})
-        const capabilities = stream.getAudioTracks()[0].getCapabilities();
-        console.log(capabilities)
-        //let recorder = new MediaRecorder(stream,{ mimeType: 'audio/webm;codecs=opus' })
-        let recorder = new MediaRecorder(stream)
-        recorder.ondataavailable = function(e) {
-           queue.push(e.data);
-           console.log(e.data.type);
-        }
+        let recorder = new MediaRecorder(stream,{ mimeType: 'audio/webm;codecs=opus' })
+        recorder.ondataavailable = this.sender
         recorder.onstop = this.mediarecorder_stop
-
+        
         console.log(recorder.state)
         this.recorder = recorder
 
@@ -57,16 +51,11 @@ class Microphone{
         audio.setAttribute('controls', '');
         audio.controls = true;
         document.body.appendChild(audio)
-        //const blob = new Blob(queue, { 'type' : 'audio/ogg; codecs=opus' });
-        //queue = [];
-        //const audioURL = URL.createObjectURL(blob);
-        //audio.src = audioURL;
 
         const blob = new Blob(queue, { 'type' : 'audio/webm; codecs=opus' });
-        //queue = [];
+        queue = [];
         const audioURL = window.URL.createObjectURL(blob);
         audio.src = audioURL;
-        //audio.srcObject = blob;
     }
     stop(){
         this.recorder.stop()
