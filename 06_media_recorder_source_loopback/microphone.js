@@ -4,7 +4,6 @@
 const period_ms = 100
 
 let socket = null
-let queue = []
 let sourceBuffer
 let started = false
 
@@ -22,9 +21,10 @@ class Microphone{
         }
     }
     receiver(event){
-        //queue.push(event.data)
-        console.log(`rx:${event.data.size}`)
-        sourceBuffer.appendBuffer(event.data)
+        if (event.data instanceof ArrayBuffer) {
+            console.log(`rx:${event.data.byteLength} bytes`)
+            sourceBuffer.appendBuffer(event.data)
+        }
     }
     async start(arg_socket){
         if(started){
@@ -38,7 +38,6 @@ class Microphone{
         const audio = document.getElementById('audio');
 
         //https://developer.mozilla.org/en-US/docs/Web/API/MediaSource
-        //sourceBuffer.appendBuffer(buf);
         let mediaSource = new MediaSource();
         const audioURL = window.URL.createObjectURL(mediaSource);
         audio.src = audioURL;
@@ -60,12 +59,9 @@ class Microphone{
         console.log('MediaRecorder> started')
         console.log(recorder.state)
         this.recorder = recorder
-
     }
     mediarecorder_stop(event){
         console.log("MediaRecorder> stop")
-        //const blob = new Blob(queue, { 'type' : 'audio/webm; codecs=opus' });
-        queue = [];
     }
     stop(){
         this.recorder.stop()
