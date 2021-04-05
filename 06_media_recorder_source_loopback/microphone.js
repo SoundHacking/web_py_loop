@@ -47,6 +47,7 @@ class Microphone{
         mediaSource.onsourceopen = (()=>{
             console.log("MediaSource> open")
             sourceBuffer = mediaSource.addSourceBuffer('audio/webm;codecs=opus');
+            console.log(`source buffer mode = ${sourceBuffer.mode}`)
         })
         mediaSource.onstop = (()=>{console.log("MediaSource> stop")})
         mediaSource.onsourceended = (()=>{console.log("MediaSource> ended")})
