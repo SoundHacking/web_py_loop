@@ -35,11 +35,13 @@ class Microphone{
         socket = arg_socket
         socket.binaryType = 'arraybuffer';
 
-        const audio = document.getElementById('audio');
 
         //https://developer.mozilla.org/en-US/docs/Web/API/MediaSource
         let mediaSource = new MediaSource();
+        //"audio.srcObject = mediaSource" => not possible, only allowed for WebRTC MediaStream
+        //https://stackoverflow.com/questions/51843518/mediasource-vs-mediastream-in-javascript/51860280
         const audioURL = window.URL.createObjectURL(mediaSource);
+        const audio = document.getElementById('audio');
         audio.src = audioURL;
 
         mediaSource.onsourceopen = (()=>{
