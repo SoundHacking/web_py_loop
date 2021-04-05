@@ -21,38 +21,24 @@ let localStream;
 
 let lastResult;
 
-const offerOptions = {
-  offerToReceiveAudio: 1,
-  offerToReceiveVideo: 0,
-  voiceActivityDetection: false
-};
-
-
-// Enabling opus DTX is an expert option without GUI.
-// eslint-disable-next-line prefer-const
-let useDtx = false;
-
-// Disabling Opus FEC is an expert option without GUI.
-// eslint-disable-next-line prefer-const
-let useFec = true;
-
-function gotStream(stream) {
-  hangupButton.disabled = false;
-  console.log('gotStream() >>>> Received local stream');
-  localStream = stream;
-  const audioTracks = localStream.getAudioTracks();
-  if (audioTracks.length > 0) {
-    console.log(`Using Audio device: ${audioTracks[0].label}`);
-  }
-  localStream.getTracks().forEach(track => pc1.addTrack(track, localStream));
-  console.log('Adding Local Stream to peer connection');
-
-  pc1.createOffer(offerOptions)
-      .then(gotDescription1, onCreateSessionDescriptionError);
+function onIceCandidate(pc, event) {
+  console.log("onIceCandidate() >>>> ")
+  const other_pc = (pc === pc1) ? pc2 : pc1;
+  other_pc.addIceCandidate(event.candidate)
+      .then(
+          () => onAddIceCandidateSuccess(pc),
+          err => onAddIceCandidateError(pc, err)
+      );
+  const pc_name = (pc === pc1) ? 'pc1' : 'pc2';
+  console.log(`${pc_name} ICE candidate:\n${event.candidate ? event.candidate.candidate : '(null)'}`);
 }
 
-function onCreateSessionDescriptionError(error) {
-  console.log(`onCreateSessionDescriptionError() >>>> Failed to create session description: ${error.toString()}`);
+function onAddIceCandidateSuccess() {
+  console.log('onAddIceCandidateSuccess() >>>> AddIceCandidate success.');
+}
+
+function onAddIceCandidateError(error) {
+  console.log(`onAddIceCandidateError() >>>> Failed to add ICE Candidate: ${error.toString()}`);
 }
 
 function call() {
@@ -79,6 +65,30 @@ function call() {
       });
 }
 
+function gotStream(stream) {
+  hangupButton.disabled = false;
+  console.log('gotStream() >>>> Received local stream');
+  localStream = stream;
+  const audioTracks = localStream.getAudioTracks();
+  if (audioTracks.length > 0) {
+    console.log(`Using Audio device: ${audioTracks[0].label}`);
+  }
+  localStream.getTracks().forEach(track => pc1.addTrack(track, localStream));
+  console.log('Adding Local Stream to peer connection');
+
+  const offerOptions = {
+    offerToReceiveAudio: 1,
+    offerToReceiveVideo: 0,
+    voiceActivityDetection: false
+  };
+  pc1.createOffer(offerOptions)
+      .then(gotDescription1, onCreateSessionDescriptionError);
+}
+
+function onCreateSessionDescriptionError(error) {
+  console.log(`onCreateSessionDescriptionError() >>>> Failed to create session description: ${error.toString()}`);
+}
+
 function gotDescription1(desc) {
   console.log(`gotDescription1() >>>> Offer from pc1\n : {desc.sdp}`);
   pc1.setLocalDescription(desc)
@@ -92,14 +102,28 @@ function gotDescription1(desc) {
 function gotDescription2(desc) {
   console.log(`gotDescription2() >>>> Answer from pc2\n : {desc.sdp}`);
   pc2.setLocalDescription(desc).then(() => {
+    const useDtx = false;
     if (useDtx) {
       desc.sdp = desc.sdp.replace('useinbandfec=1', 'useinbandfec=1;usedtx=1');
     }
+    const useFec = true;
     if (!useFec) {
       desc.sdp = desc.sdp.replace('useinbandfec=1', 'useinbandfec=0');
     }
     pc1.setRemoteDescription(desc).then(() => {}, onSetSessionDescriptionError);
   }, onSetSessionDescriptionError);
+}
+
+function gotRemoteStream(e) {
+  console.log("gotRemoteStream() >>>> ")
+  if (audio2.srcObject !== e.streams[0]) {
+    audio2.srcObject = e.streams[0];
+    console.log('Received remote stream');
+  }
+}
+
+function onSetSessionDescriptionError(error) {
+  console.log(`onSetSessionDescriptionError() >>>> Failed to set session description: ${error.toString()}`);
 }
 
 function hangup() {
@@ -114,40 +138,3 @@ function hangup() {
   callButton.disabled = false;
 }
 
-function gotRemoteStream(e) {
-  console.log("gotRemoteStream() >>>> ")
-  if (audio2.srcObject !== e.streams[0]) {
-    audio2.srcObject = e.streams[0];
-    console.log('Received remote stream');
-  }
-}
-
-function getOtherPc(pc) {
-  return (pc === pc1) ? pc2 : pc1;
-}
-
-function getName(pc) {
-  return (pc === pc1) ? 'pc1' : 'pc2';
-}
-
-function onIceCandidate(pc, event) {
-  console.log("onIceCandidate() >>>> ")
-  getOtherPc(pc).addIceCandidate(event.candidate)
-      .then(
-          () => onAddIceCandidateSuccess(pc),
-          err => onAddIceCandidateError(pc, err)
-      );
-  console.log(`${getName(pc)} ICE candidate:\n${event.candidate ? event.candidate.candidate : '(null)'}`);
-}
-
-function onAddIceCandidateSuccess() {
-  console.log('onAddIceCandidateSuccess() >>>> AddIceCandidate success.');
-}
-
-function onAddIceCandidateError(error) {
-  console.log(`onAddIceCandidateError() >>>> Failed to add ICE Candidate: ${error.toString()}`);
-}
-
-function onSetSessionDescriptionError(error) {
-  console.log(`onSetSessionDescriptionError() >>>> Failed to set session description: ${error.toString()}`);
-}
